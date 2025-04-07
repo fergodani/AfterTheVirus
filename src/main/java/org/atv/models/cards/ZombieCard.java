@@ -1,0 +1,51 @@
+package org.atv.models.cards;
+
+import org.atv.models.actions.Action;
+
+public class ZombieCard extends Card {
+
+   private int value;
+
+   private int zombiesDiscarded;
+   private int zombiesKilled;
+
+   // Para la carta de cura
+   private boolean isSurvivor;
+
+   public ZombieCard(int value, Action action) {
+      super(value == 1 ? "1 zombie" : value + " zombies", "Zombie", 0, action);
+      this.value = value;
+   }
+
+   public int getValue() {
+      return value;
+   }
+
+   public void setValue(int value) {
+      this.value = value;
+   }
+
+   public boolean isSurvivor() {
+      return isSurvivor;
+   }
+
+   public void setSurvivor(boolean survivor) {
+      isSurvivor = survivor;
+   }
+
+   public int getZombiesDiscarded() {
+      return zombiesDiscarded;
+   }
+
+   public void setZombiesDiscarded(int zombiesDiscarded) {
+      this.zombiesDiscarded = zombiesDiscarded;
+   }
+
+   public int getZombiesKilled() {
+      return zombiesKilled;
+   }
+
+   public void setZombiesKilled(int zombiesKilled) {
+      this.zombiesKilled = zombiesKilled;
+   }
+}
