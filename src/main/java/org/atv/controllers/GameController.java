@@ -15,9 +15,6 @@ public class GameController {
    }
 
    public void start() {
-      // TODO: no se pueden tener más de dos armas preparadas
-      // TODO: limitaciones de las heridas
-      // TODO: no se puede tener más de un vehiculo preparado
       // TODO: tener en cuenta si se tiene el rifle en la mano se le puede añadir munición
       int option = this.userInterface.getPlayerInteraction().selectOption("Select a character: \n1. Ruth\n2. Adam\n3. Robert\n4. Jennie", 4);
       Character character = Character.values()[option - 1];
@@ -27,7 +24,7 @@ public class GameController {
          this.userInterface.updateInfo();
          this.userInterface.playAction();
          if (game.isGameOver()) {
-            this.userInterface.getPlayerInteraction().showMessage("Game Over! You survived " + game.getWave() + " rounds with " + game.getSurvivorsRescued() + " survivors rescued.");
+            this.userInterface.getPlayerInteraction().showMessage("Game Over! You survived " + game.getWave() + " waves with " + game.getSurvivorsRescued() + " survivors rescued.");
             break;
          }
       }

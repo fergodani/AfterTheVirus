@@ -36,6 +36,9 @@ public class ShootingCard extends PermanentCard{
    public void addAmmo(Card ammo) {
       this.ammo.add(ammo);
    }
+   public void addAmmo(List<Card> ammo) {
+      this.ammo.addAll(ammo);
+   }
 
    public Card shoot() {
       return this.ammo.pop();
@@ -43,5 +46,10 @@ public class ShootingCard extends PermanentCard{
 
    public Stack<Card> getAmmo() {
       return ammo;
+   }
+
+   @Override
+   public String toStringInPlay() {
+      return "[" + getName() + ", PC: " + getPrepareCost() + " prep: " + isPrepared() + " ammo: " + ammo.size() + "]";
    }
 }

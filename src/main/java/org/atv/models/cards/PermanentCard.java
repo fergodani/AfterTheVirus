@@ -12,14 +12,14 @@ public class PermanentCard extends Card{
    private boolean used = false;
    private boolean prepared = false;
 
-   public PermanentCard(String name, int explorationCost, int usageCost, String subType, Action action) {
+   public PermanentCard(String name, int explorationCost, int prepareCost, String subType, Action action) {
       super(name, subType, explorationCost, action);
-      this.prepareCost = usageCost;
+      this.prepareCost = prepareCost;
    }
 
-   public PermanentCard(String name, int explorationCost, int usageCost, String subType, boolean oncePerTurn, Action action) {
+   public PermanentCard(String name, int explorationCost, int prepareCost, String subType, boolean oncePerTurn, Action action) {
       super(name, subType, explorationCost, action);
-      this.prepareCost = usageCost;
+      this.prepareCost = prepareCost;
       this.oncePerTurn = oncePerTurn;
    }
 

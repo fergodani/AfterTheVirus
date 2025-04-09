@@ -1,9 +1,6 @@
 package org.atv.models;
 
-import org.atv.models.cards.Card;
-import org.atv.models.cards.EventCard;
-import org.atv.models.cards.PermanentCard;
-import org.atv.models.cards.ZombieCard;
+import org.atv.models.cards.*;
 import org.atv.utils.CardFactory;
 import org.atv.views.PlayerInteraction;
 
@@ -30,6 +27,7 @@ public class Game {
    private int wave = 1;
    private int survivorsRescued;
    private boolean canRetrieveMedicalEquipment = false;
+   private boolean isRifleInPlay = false;
    private boolean armsDamaged = false;
    private boolean legsDamaged = false;
    private boolean isGameOver = false;
@@ -71,12 +69,16 @@ public class Game {
       }
       Card card = this.playerInteraction.selectCard(this.playerHand);
       if (card instanceof EventCard) {
+         if (isLegsDamaged() && card.getName().equals("Run")) {
+            this.playerInteraction.showMessage("No puedes jugar la carta Run.");
+            return;
+         }
          this.playerHand.remove(card);
          card.play(this);
       } else {
          this.playerHand.remove(card);
          this.playerArea.add(card);
-         if (((PermanentCard) card).getPrepareCost() == 0) {
+         if (((PermanentCard) card).getPrepareCost() == 0 && !(card instanceof ShootingCard)) {
             ((PermanentCard) card).setPrepared(true);
          }
       }
@@ -145,9 +147,9 @@ public class Game {
          this.setArmsDamaged(true);
       } else if (totalZombies == 1) {
          if (isLegsDamaged() && !isArmsDamaged()) {
-            this.setArmsDamaged(false);
+            this.setArmsDamaged(true);
          } else if (isArmsDamaged() && !isLegsDamaged()) {
-            this.setLegsDamaged(false);
+            this.setLegsDamaged(true);
          } else {
             int option = this.playerInteraction.selectOption("¿Dónde quieres recibir el daño?\n1. Brazos\n2. Piernas", 2);
             switch (option) {
@@ -166,9 +168,6 @@ public class Game {
    }
 
    private void nextRound() {
-      if (this.playerDeck.isEmpty()) {
-         this.shuffleDeck();
-      }
       for (int i = 0; i < 5; i++) {
          if (this.playerDeck.isEmpty()) {
             this.shuffleDeck();
@@ -383,6 +382,25 @@ public class Game {
 
    public void setArmsDamaged(boolean armsDamaged) {
       this.armsDamaged = armsDamaged;
+      if (this.armsDamaged) {
+         List<Card> weaponsPrepared = this.getPlayerArea()
+                 .stream().filter((card -> (card.getSubType().equals("Striking") || card.getSubType().equals("Shooting"))
+                         && ((PermanentCard) card).isPrepared()))
+                 .collect(Collectors.toList());
+         if (weaponsPrepared.size() > 1) {
+            this.getPlayerInteraction().showMessage("No puedes tener más de una arma preparada. Destruye una.");
+
+            StringBuilder message = new StringBuilder("¿Qué arma quieres destruir?\n");
+            for (Card card : weaponsPrepared) {
+               message.append("1. ").append(card.getName()).append("\n");
+            }
+            int option = this.getPlayerInteraction().selectOption(
+                    message.toString(),
+                    weaponsPrepared.size()
+            );
+            this.destroy(weaponsPrepared.get(option - 1));
+         }
+      }
    }
 
    public boolean isLegsDamaged() {
@@ -403,5 +421,13 @@ public class Game {
 
    public void setPlayerInteraction(PlayerInteraction playerInteraction) {
       this.playerInteraction = playerInteraction;
+   }
+
+   public boolean isRifleInPlay() {
+      return isRifleInPlay;
+   }
+
+   public void setRifleInPlay(boolean rifleInPlay) {
+      isRifleInPlay = rifleInPlay;
    }
 }

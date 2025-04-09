@@ -69,6 +69,9 @@ public class ConsoleInterface implements UserInterface {
       System.out.println("4. Preparar carta");
       System.out.println("5. Usar carta");
       System.out.println("6. Pasar");
+      if (game.isRifleInPlay()) {
+         System.out.println("7. Recargar rifle");
+      }
 
       int action;
       try {

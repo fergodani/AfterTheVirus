@@ -6,10 +6,7 @@ import org.atv.models.actions.*;
 import org.atv.models.cards.*;
 import org.omg.CORBA.ShortSeqHelper;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CardFactory {
@@ -43,6 +40,13 @@ public class CardFactory {
             game.getPlayerDiscard().add(card);
          }
       });
+      permanentCard.setPrepareAction((game, card) -> {
+         if (game.discard(((PermanentCard) card).getPrepareCost())) {
+            if (checkVehiclePrepared(game, (PermanentCard) card)) return;
+            ((PermanentCard) card).setPrepared(true);
+         }
+
+      });
       explorationDeck.add(permanentCard);
 
       // MC
@@ -55,6 +59,7 @@ public class CardFactory {
       });
       permanentCard.setPrepareAction(((game, card) -> {
          if (game.discard(((PermanentCard) card).getPrepareCost())) {
+            if (checkVehiclePrepared(game, (PermanentCard) card)) return;
             Card cardSelected = game.getPlayerInteraction().selectCard(game.getZombieArea());
             game.getZombieArea().remove(cardSelected);
             game.getPlayerDiscard().add(cardSelected);
@@ -79,7 +84,7 @@ public class CardFactory {
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Trapper Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Trapper Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -94,7 +99,7 @@ public class CardFactory {
          game.getPlayerDiscard().add(self);
          int preparedPerson = 0;
          for (Card card : game.getPlayerArea()) {
-            if (card.getSubType().equals("Person") && ((PermanentCard)card).isPrepared()
+            if (card.getSubType().equals("Person") && ((PermanentCard) card).isPrepared()
                     || (card instanceof ZombieCard && ((ZombieCard) card).isSurvivor())) {
                preparedPerson++;
             }
@@ -104,7 +109,7 @@ public class CardFactory {
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Trapper Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Trapper Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -146,7 +151,7 @@ public class CardFactory {
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Trapper Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Trapper Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -208,14 +213,14 @@ public class CardFactory {
                     || card.getSubType().equals("Vehicle")
                     || card.getSubType().equals("Shooting")
                     || card.getSubType().equals("Striking")) {
-               ((PermanentCard)card).prepare(game);
+               ((PermanentCard) card).prepare(game);
             }
          }
       });
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Trapper Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Trapper Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -285,7 +290,7 @@ public class CardFactory {
       permanentCard = new PermanentCard("Pub", 2, 1, "Facility", (game, self) -> {
       });
       permanentCard.setPrepareAction((game, card) -> {
-         if(game.discard("Survivor")) {
+         if (game.discard("Survivor")) {
             ((PermanentCard) card).setPrepared(true);
          }
       });
@@ -333,6 +338,20 @@ public class CardFactory {
          game.getPlayerDiscard().add(self);
          game.kill(6);
       });
+      permanentCard.setPrepareAction((game, self) -> {
+         if (game.discard(((PermanentCard) self).getPrepareCost())) {
+
+            checkPreparedWeapons(game);
+
+            for (Card card : game.getPlayerArea()) {
+               if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
+                  game.kill(1);
+               }
+            }
+            ((PermanentCard) self).setPrepared(true);
+         }
+
+      });
       explorationDeck.add(permanentCard);
 
       // Concussion Grenade
@@ -349,8 +368,10 @@ public class CardFactory {
       });
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
+            checkPreparedWeapons(game);
+
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Weapon Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -373,10 +394,12 @@ public class CardFactory {
       });
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
+            checkPreparedWeapons(game);
+
             game.discardZombie(1);
 
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Weapon Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -402,7 +425,7 @@ public class CardFactory {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
 
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Weapon Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -413,7 +436,7 @@ public class CardFactory {
 
       // Machete
       permanentCard = new PermanentCard("Machete", 1, 0, "Striking", true, (game, self) -> {
-         if (((PermanentCard)self).isUsed()) {
+         if (((PermanentCard) self).isUsed()) {
             game.getPlayerInteraction().showMessage("Solo se puede usar una vez");
             return;
          }
@@ -432,9 +455,10 @@ public class CardFactory {
       });
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
+            checkPreparedWeapons(game);
 
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Weapon Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
@@ -456,21 +480,37 @@ public class CardFactory {
          }
       });
       permanentCard.setPrepareAction(((game, self) -> {
-         if (game.discard(((PermanentCard) self).getPrepareCost())) {
-
-            for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Weapon Skill") && ((PermanentCard)card).isPrepared()) {
-                  game.kill(1);
-               }
-            }
-            ((PermanentCard) self).setPrepared(true);
+         if (game.getPlayerHand().isEmpty()) {
+            game.getPlayerInteraction().showMessage("No hay cartas en la mano.");
+            return;
          }
+         int opcion = 0;
+         do {
+            game.getPlayerInteraction().showMessage("Tienes que añadir municion");
+            Card ammo = game.getPlayerInteraction().selectCard(game.getPlayerHand());
+            ((ShootingCard) self).addAmmo(ammo);
+            game.getPlayerHand().remove(ammo);
+            opcion = game.getPlayerInteraction().selectOption(
+                    "¿Quieres meter más munición?\n1. Sí\n2. No",
+                    2
+            );
+            if (opcion == 1 && game.getPlayerHand().isEmpty()) {
+               opcion = 2;
+            }
+         } while (opcion != 2);
+         checkPreparedWeapons(game);
+         for (Card card : game.getPlayerArea()) {
+            if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
+               game.kill(1);
+            }
+         }
+         ((PermanentCard) self).setPrepared(true);
       }));
       explorationDeck.add(permanentCard);
 
       // Pistol
       permanentCard = new ShootingCard("Pistol", 2, 1, "Shooting", true, (game, self) -> {
-         if (((PermanentCard)self).isUsed()) {
+         if (((PermanentCard) self).isUsed()) {
             game.getPlayerInteraction().showMessage("Solo se puede usar una vez");
             return;
          }
@@ -500,21 +540,26 @@ public class CardFactory {
          }
       }, true);
       permanentCard.setPrepareAction(((game, self) -> {
-         if (game.discard(((PermanentCard) self).getPrepareCost())) {
-
-            for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Weapon Skill") && ((PermanentCard)card).isPrepared()) {
-                  game.kill(1);
-               }
-            }
-            ((PermanentCard) self).setPrepared(true);
+         if (game.getPlayerHand().isEmpty()) {
+            game.getPlayerInteraction().showMessage("No hay cartas en la mano.");
+            return;
          }
+         game.getPlayerInteraction().showMessage("Tienes que añadir municion");
+         Card ammo = game.getPlayerInteraction().selectCard(game.getPlayerHand());
+         ((ShootingCard)self).addAmmo(ammo);
+         checkPreparedWeapons(game);
+         for (Card card : game.getPlayerArea()) {
+            if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
+               game.kill(1);
+            }
+         }
+         ((PermanentCard) self).setPrepared(true);
       }));
       explorationDeck.add(permanentCard);
 
       // Rifle
       permanentCard = new ShootingCard("Rifle", 2, 1, "Shooting", true, false, (game, self) -> {
-         if (((PermanentCard)self).isUsed()) {
+         if (((PermanentCard) self).isUsed()) {
             game.getPlayerInteraction().showMessage("Solo se puede usar una vez");
             return;
          }
@@ -552,7 +597,7 @@ public class CardFactory {
          ((PermanentCard) self).setUsed(true);
 
          for (Card card : game.getPlayerArea()) {
-            if (card.getName().equals("Sure Aim") && ((PermanentCard) card).isPrepared()){
+            if (card.getName().equals("Sure Aim") && ((PermanentCard) card).isPrepared()) {
                game.kill(1);
             }
          }
@@ -560,15 +605,20 @@ public class CardFactory {
       });
       permanentCard.setPrepareAction(((game, self) -> {
          if (game.discard(((PermanentCard) self).getPrepareCost())) {
+            checkPreparedWeapons(game);
 
             for (Card card : game.getPlayerArea()) {
-               if (card.getName().equals("Weapon Skill") && ((PermanentCard)card).isPrepared()) {
+               if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
                   game.kill(1);
                }
             }
             ((PermanentCard) self).setPrepared(true);
+            game.setRifleInPlay(true);
          }
       }));
+      permanentCard.setExitAction((game, card) -> {
+         game.setRifleInPlay(false);
+      });
       explorationDeck.add(permanentCard);
 
       // Shotgun
@@ -596,19 +646,38 @@ public class CardFactory {
          }
       });
       permanentCard.setPrepareAction(((game, self) -> {
-         // TODO: las armas que se preparan con munición
+         if (game.getPlayerHand().isEmpty()) {
+            game.getPlayerInteraction().showMessage("No hay cartas en la mano.");
+            return;
+         }
+         int opcion = 0;
+         do {
+            game.getPlayerInteraction().showMessage("Tienes que añadir municion");
+            Card ammo = game.getPlayerInteraction().selectCard(game.getPlayerHand());
+            ((ShootingCard) self).addAmmo(ammo);
+            game.getPlayerHand().remove(ammo);
+            opcion = game.getPlayerInteraction().selectOption(
+                    "¿Quieres meter más munición?\n1. Sí\n2. No",
+                    2
+            );
+            if (opcion == 1 && game.getPlayerHand().isEmpty()) {
+               opcion = 2;
+            }
+         } while (opcion != 2);
+         checkPreparedWeapons(game);
          for (Card card : game.getPlayerArea()) {
             if (card.getName().equals("Weapon Skill") && ((PermanentCard) card).isPrepared()) {
                game.kill(1);
             }
          }
+         ((PermanentCard) self).setPrepared(true);
       }));
       explorationDeck.add(permanentCard);
 
       // Magazine
       permanentCard = new PermanentCard("Magazine", 2, 0, " - ", (game, self) -> {
          List<Card> weaponsPrepared = game.getPlayerArea()
-                 .stream().filter((card -> card instanceof ShootingCard && ((ShootingCard)card).isPrepared()))
+                 .stream().filter((card -> card instanceof ShootingCard && ((ShootingCard) card).isPrepared()))
                  .collect(Collectors.toList());
          StringBuilder message = new StringBuilder("¿Qué arma quieres cargar?\n");
          for (Card card : weaponsPrepared) {
@@ -618,7 +687,7 @@ public class CardFactory {
                  message.toString(),
                  weaponsPrepared.size()
          );
-         ShootingCard cardSelected = (ShootingCard)weaponsPrepared.get(option - 1);
+         ShootingCard cardSelected = (ShootingCard) weaponsPrepared.get(option - 1);
          cardSelected.addAmmo(self);
       });
       explorationDeck.add(permanentCard);
@@ -655,10 +724,10 @@ public class CardFactory {
                   cardsToRemove.add(card);
                   game.getPlayerDiscard().add(card);
                   totalRescued++;
-               } else if (card.getName().equals("VIP")  && ((PermanentCard) card).isPrepared()) {
+               } else if (card.getName().equals("VIP") && ((PermanentCard) card).isPrepared()) {
                   game.destroy(card);
                   totalRescued += 3;
-               } else if (card.getName().equals("Pub")  && ((PermanentCard) card).isPrepared()) {
+               } else if (card.getName().equals("Pub") && ((PermanentCard) card).isPrepared()) {
                   if (game.isArmsDamaged() && !game.isLegsDamaged()) {
                      game.setArmsDamaged(false);
                   } else if (!game.isArmsDamaged() && game.isLegsDamaged()) {
@@ -682,11 +751,61 @@ public class CardFactory {
       });
       explorationDeck.add(eventCard);
 
-      explorationDeck.add(new PermanentCard("Survivor", 1, 1, "Person", (game, self) -> {}));
-      explorationDeck.add(new PermanentCard("Survivor", 1, 1, "Person", (game, self) -> {}));
-      explorationDeck.add(new PermanentCard("Survivor", 1, 1, "Person", (game, self) -> {}));
-      explorationDeck.add(new PermanentCard("VIP", 3, 1, "Person", (game, self) -> {}));
+      explorationDeck.add(new PermanentCard("Survivor", 1, 1, "Person", (game, self) -> {
+      }));
+      explorationDeck.add(new PermanentCard("Survivor", 1, 1, "Person", (game, self) -> {
+      }));
+      explorationDeck.add(new PermanentCard("Survivor", 1, 1, "Person", (game, self) -> {
+      }));
+      explorationDeck.add(new PermanentCard("VIP", 3, 1, "Person", (game, self) -> {
+      }));
 
+   }
+
+   private static boolean checkVehiclePrepared(Game game, PermanentCard card) {
+      Optional<Card> vehicle = game.getPlayerArea().stream()
+              .filter(c -> c.getSubType().equals("Vehicle") && card.isPrepared())
+              .findFirst();
+      if (vehicle.isPresent()) {
+         game.getPlayerInteraction().showMessage("Ya tienes un vehículo preparado");
+         int option = game.getPlayerInteraction().selectOption("¿Quieres destruir el vehículo?\n1. Si\n2. No", 2);
+         if (option == 1) {
+            game.getPlayerArea().remove(vehicle.get());
+            game.destroy(vehicle.get());
+         } else {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private static void checkPreparedWeapons(Game game) {
+      List<Card> weaponsPrepared = game.getPlayerArea()
+              .stream().filter((card -> (card.getSubType().equals("Striking") || card.getSubType().equals("Shooting"))
+                      && ((PermanentCard) card).isPrepared()))
+              .collect(Collectors.toList());
+      if (weaponsPrepared.size() == 2) {
+         game.getPlayerInteraction().showMessage("No puedes tener más de dos armas preparadas. Destruye una.");
+         StringBuilder message = new StringBuilder("¿Qué arma quieres destruir?\n");
+         for (Card card : weaponsPrepared) {
+            message.append("1. ").append(card.getName()).append("\n");
+         }
+         int option = game.getPlayerInteraction().selectOption(
+                 message.toString(),
+                 weaponsPrepared.size()
+         );
+         game.destroy(weaponsPrepared.get(option - 1));
+      } else if (weaponsPrepared.size() > 1 && game.isArmsDamaged()) {
+         game.getPlayerInteraction().showMessage("No puedes tener más de una arma preparada. Destruye una.");
+
+         int option = game.getPlayerInteraction().selectOption(
+                 "¿Quieres destruir el arma actual?\n1. Si\n2. No",
+                 2
+         );
+         if (option == 1) {
+            game.destroy(weaponsPrepared.get(0));
+         }
+      }
    }
 
    public void createZombieDeck() {
@@ -714,20 +833,20 @@ public class CardFactory {
       Stack<Card> playerDeck = new Stack<>();
       switch (character) {
          case ADAM: {
-            for (Card card: this.explorationDeck) {
+            for (Card card : this.explorationDeck) {
                if (card.getName().equals("Survivor")
-                     || card.getName().equals("Run")
-                     || card.getName().equals("Raid")
-                     || card.getName().equals("Safe house")
-                     || card.getName().equals("Machete")
-                     || card.getName().equals("Dog")) {
+                       || card.getName().equals("Run")
+                       || card.getName().equals("Raid")
+                       || card.getName().equals("Safe house")
+                       || card.getName().equals("Machete")
+                       || card.getName().equals("Dog")) {
                   playerDeck.push(card);
                }
             }
             break;
          }
          case JENNIE: {
-            for (Card card: this.explorationDeck) {
+            for (Card card : this.explorationDeck) {
                if (card.getName().equals("Survivor")
                        || card.getName().equals("Run")
                        || card.getName().equals("Pistol")
@@ -742,7 +861,7 @@ public class CardFactory {
          case ROBERT: {
             int runCount = 0;
             int survivorCount = 0;
-            for (Card card: this.explorationDeck) {
+            for (Card card : this.explorationDeck) {
                if (card.getName().equals("Crowbar")
                        || card.getName().equals("Safe house")
                        || card.getName().equals("Guide")
@@ -767,7 +886,7 @@ public class CardFactory {
             break;
          }
          case RUTH: {
-            for (Card card: this.explorationDeck) {
+            for (Card card : this.explorationDeck) {
                if (card.getName().equals("Survivor")
                        || card.getName().equals("Shotgun")
                        || card.getName().equals("Raid")
