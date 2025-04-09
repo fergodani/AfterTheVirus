@@ -6,8 +6,8 @@ public class ZombieCard extends Card {
 
    private int value;
 
-   private int zombiesDiscarded;
-   private int zombiesKilled;
+   private int zombiesDiscarded = 0;
+   private int zombiesLeft;
 
    // Para la carta de cura
    private boolean isSurvivor;
@@ -15,6 +15,12 @@ public class ZombieCard extends Card {
    public ZombieCard(int value, Action action) {
       super(value == 1 ? "1 zombie" : value + " zombies", "Zombie", 0, action);
       this.value = value;
+      this.zombiesLeft = value;
+   }
+
+   @Override
+   public String toString() {
+      return "[Zombie: " + value + "]";
    }
 
    public int getValue() {
@@ -41,11 +47,11 @@ public class ZombieCard extends Card {
       this.zombiesDiscarded = zombiesDiscarded;
    }
 
-   public int getZombiesKilled() {
-      return zombiesKilled;
+   public int getZombiesLeft() {
+      return zombiesLeft;
    }
 
-   public void setZombiesKilled(int zombiesKilled) {
-      this.zombiesKilled = zombiesKilled;
+   public void setZombiesLeft(int zombiesLeft) {
+      this.zombiesLeft = zombiesLeft;
    }
 }

@@ -1,5 +1,6 @@
 package org.atv.models.cards;
 
+import org.atv.models.Game;
 import org.atv.models.actions.Action;
 
 public class Card {
@@ -9,15 +10,11 @@ public class Card {
    private int explorationCost;
    private Action action;
 
-
-   private boolean prepared;
-
    public Card(String name, String subType, int explorationCost, Action action) {
       this.name = name;
       this.explorationCost = explorationCost;
       this.action = action;
       this.subType = subType;
-      this.prepared = false;
    }
 
    public Card(String name, String subType, int explorationCost) {
@@ -26,8 +23,8 @@ public class Card {
       this.explorationCost = explorationCost;
    }
 
-   public void prepare() {
-      this.prepared = true;
+   public void play(Game game) {
+      this.action.execute(game, this);
    }
 
    public String getName() {
@@ -54,13 +51,6 @@ public class Card {
       this.action = action;
    }
 
-   public boolean isPrepared() {
-      return prepared;
-   }
-
-   public void setPrepared(boolean prepared) {
-      this.prepared = prepared;
-   }
 
    public String getSubType() {
       return subType;
@@ -68,5 +58,22 @@ public class Card {
 
    public void setSubType(String subType) {
       this.subType = subType;
+   }
+
+   @Override
+   public String toString() {
+      return "[" + getName() + "]";
+   }
+
+   public String toStringHand() {
+      return this.toString();
+   }
+
+   public String toStringExploration() {
+      return "[" + getName() + ", EC: " + getExplorationCost() + "]";
+   }
+
+   public String toStringInPlay() {
+      return toString();
    }
 }

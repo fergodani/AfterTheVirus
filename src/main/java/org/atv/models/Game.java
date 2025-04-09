@@ -1,10 +1,14 @@
 package org.atv.models;
 
 import org.atv.models.cards.Card;
+import org.atv.models.cards.EventCard;
+import org.atv.models.cards.PermanentCard;
 import org.atv.models.cards.ZombieCard;
+import org.atv.utils.CardFactory;
 import org.atv.views.PlayerInteraction;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -20,21 +24,209 @@ public class Game {
    private List<Card> playerDiscard = new ArrayList<>();
    private List<Card> playerHand = new ArrayList<>();
    private List<Card> cardsDestroyed = new ArrayList<>();
-   private final PlayerInteraction playerInteraction;
+   private PlayerInteraction playerInteraction;
    private int defends = 0;
 
-   private int round;
+   private int wave = 1;
    private int survivorsRescued;
    private boolean canRetrieveMedicalEquipment = false;
    private boolean armsDamaged = false;
    private boolean legsDamaged = false;
+   private boolean isGameOver = false;
 
-   public Game(PlayerInteraction playerInteraction) {
-      this.playerInteraction = playerInteraction;
+   public void init(Character character) {
+      CardFactory cardFactory = CardFactory.getInstance();
+      cardFactory.createExplorationDeck();
+      cardFactory.createZombieDeck();
+      this.playerDeck = cardFactory.createPlayerDeck(character);
+      this.zombieDeck = cardFactory.getZombieDeck();
+      this.explorationDeck = cardFactory.getExplorationDeck();
+
+      for (Card card : this.playerDeck) {
+         if (card.getName().equals(character.getCardInPlay())) {
+            this.playerArea.add(card);
+            if (((PermanentCard) card).getPrepareCost() == 0) {
+               ((PermanentCard) card).setPrepared(true);
+            }
+         }
+      }
+      this.playerDeck.removeAll(this.playerArea);
+
+      Collections.shuffle(this.playerDeck);
+      Collections.shuffle(this.explorationDeck);
+      for (int i = 0; i < 5; i++) {
+         Card card = this.playerDeck.pop();
+         if (card instanceof ZombieCard) {
+            this.zombieArea.add(card);
+         } else {
+            this.playerHand.add(card);
+         }
+      }
    }
 
-   public void init() {
+   public void playCard() {
+      if (this.playerHand.isEmpty()) {
+         this.playerInteraction.showMessage("No hay cartas en la mano.");
+         return;
+      }
+      Card card = this.playerInteraction.selectCard(this.playerHand);
+      if (card instanceof EventCard) {
+         this.playerHand.remove(card);
+         card.play(this);
+      } else {
+         this.playerHand.remove(card);
+         this.playerArea.add(card);
+         if (((PermanentCard) card).getPrepareCost() == 0) {
+            ((PermanentCard) card).setPrepared(true);
+         }
+      }
 
+   }
+
+   public void explore() {
+      if (this.explorationDeck.isEmpty()) {
+         this.playerInteraction.showMessage("No hay cartas en el mazo de exploración.");
+         return;
+      }
+      discard(1);
+      Card card = this.explorationDeck.pop();
+      this.explorationArea.add(card);
+   }
+
+   public void retrieve() {
+      if (this.explorationArea.isEmpty()) {
+         this.playerInteraction.showMessage("No hay cartas en la zona de exploración.");
+         return;
+      }
+      Card card = this.playerInteraction.selectCard(this.explorationArea);
+      if (discard(card.getExplorationCost())) {
+         this.explorationArea.remove(card);
+         this.playerDiscard.add(card);
+
+      }
+   }
+
+   public void prepareCard() {
+      Card card = this.playerInteraction.selectCard(this.playerArea);
+      if (((PermanentCard) card).isPrepared()) {
+         this.playerInteraction.showMessage("La carta ya está preparada.");
+         return;
+      }
+
+      ((PermanentCard) card).prepare(this);
+
+   }
+
+   public void useCard() {
+      Card card = this.playerInteraction.selectCard(this.playerArea);
+      if (card != null) {
+         if (!((PermanentCard) card).isPrepared()) {
+            this.playerInteraction.showMessage("The card is not prepared.");
+         } else {
+            card.play(this);
+         }
+      }
+   }
+
+   public void pass() {
+      int totalZombies = this.zombieArea.stream().reduce(0, (acc, card) -> acc + ((ZombieCard) card).getZombiesLeft(), Integer::sum);
+      if (totalZombies == 0) {
+         nextRound();
+         return;
+      }
+      if (totalZombies > 2
+              || isLegsDamaged() && isArmsDamaged()
+              || totalZombies == 2 && (isLegsDamaged() || isArmsDamaged())
+      ) {
+         this.setGameOver(true);
+         return;
+      } else if (totalZombies == 2) {
+         this.setLegsDamaged(true);
+         this.setArmsDamaged(true);
+      } else if (totalZombies == 1) {
+         if (isLegsDamaged() && !isArmsDamaged()) {
+            this.setArmsDamaged(false);
+         } else if (isArmsDamaged() && !isLegsDamaged()) {
+            this.setLegsDamaged(false);
+         } else {
+            int option = this.playerInteraction.selectOption("¿Dónde quieres recibir el daño?\n1. Brazos\n2. Piernas", 2);
+            switch (option) {
+               case 1:
+                  this.setArmsDamaged(true);
+                  break;
+               case 2:
+                  this.setLegsDamaged(true);
+                  break;
+               default:
+                  this.playerInteraction.showMessage("Opción no válida.");
+            }
+         }
+      }
+      nextRound();
+   }
+
+   private void nextRound() {
+      if (this.playerDeck.isEmpty()) {
+         this.shuffleDeck();
+      }
+      for (int i = 0; i < 5; i++) {
+         if (this.playerDeck.isEmpty()) {
+            this.shuffleDeck();
+         }
+         Card card = this.playerDeck.pop();
+         if (card instanceof ZombieCard) {
+            this.zombieArea.add(card);
+         } else {
+            this.playerHand.add(card);
+         }
+      }
+   }
+
+   private void shuffleDeck() {
+      this.wave++;
+      for (int i = 0; i < wave; i++) {
+         if (this.zombieDeck.isEmpty()) {
+            this.playerInteraction.showMessage("No hay cartas en el mazo de zombis.");
+            return;
+         }
+         this.playerDiscard.add(this.zombieDeck.pop());
+      }
+      this.playerDeck.addAll(this.playerDiscard);
+      this.playerDiscard.clear();
+      Collections.shuffle(this.playerDeck);
+   }
+
+   public boolean discard(int quantity) {
+      if (this.playerHand.isEmpty()) {
+         this.playerInteraction.showMessage("No hay cartas en la mano.");
+         return false;
+      }
+      if (quantity > this.playerHand.size()) {
+         this.playerInteraction.showMessage("No tienes suficientes cartas.");
+         return false;
+      }
+      for (int i = 0; i < quantity; i++) {
+         Card card = this.playerInteraction.selectCard(this.playerHand);
+         if (card != null) {
+            this.playerHand.remove(card);
+            this.playerDiscard.add(card);
+         }
+      }
+      return true;
+   }
+
+   public boolean discard(String cardName) {
+      Card card = this.playerHand.stream()
+              .filter(c -> c.getName().equals(cardName))
+              .findFirst()
+              .orElse(null);
+      if (card != null) {
+         this.playerHand.remove(card);
+         this.playerDiscard.add(card);
+         return true;
+      }
+      this.playerInteraction.showMessage("No tienes la carta " + cardName + " en la mano.");
+      return false;
    }
 
    public void kill(ZombieCard card) {
@@ -44,6 +236,18 @@ public class Game {
 
    public void kill(int quantity) {
       this.playerInteraction.killZombies(zombieArea, quantity);
+
+      List<Card> zombiesToRemove = new ArrayList<>();
+      for (Card zombie : this.zombieArea) {
+         if (((ZombieCard) zombie).getZombiesLeft() == 0 && ((ZombieCard) zombie).getZombiesDiscarded() == 0) {
+            zombiesToRemove.add(zombie);
+            this.zombieDeck.push(zombie);
+         } else if (((ZombieCard) zombie).getZombiesLeft() == 0 && ((ZombieCard) zombie).getZombiesDiscarded() > 0) {
+            zombiesToRemove.add(zombie);
+            this.playerDiscard.add(zombie);
+         }
+      }
+      this.zombieArea.removeAll(zombiesToRemove);
    }
 
    public void discardZombie(int quantity) {
@@ -137,12 +341,12 @@ public class Game {
       this.cardsDestroyed = cardsDestroyed;
    }
 
-   public int getRound() {
-      return round;
+   public int getWave() {
+      return wave;
    }
 
-   public void setRound(int round) {
-      this.round = round;
+   public void setWave(int wave) {
+      this.wave = wave;
    }
 
    public int getSurvivorsRescued() {
@@ -187,5 +391,17 @@ public class Game {
 
    public void setLegsDamaged(boolean legsDamaged) {
       this.legsDamaged = legsDamaged;
+   }
+
+   public boolean isGameOver() {
+      return isGameOver;
+   }
+
+   public void setGameOver(boolean gameOver) {
+      isGameOver = gameOver;
+   }
+
+   public void setPlayerInteraction(PlayerInteraction playerInteraction) {
+      this.playerInteraction = playerInteraction;
    }
 }

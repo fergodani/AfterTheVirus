@@ -1,10 +1,9 @@
-package org.atv.views.gui;
+package org.atv.views.console;
 
 import org.atv.models.cards.Card;
 import org.atv.models.cards.ZombieCard;
 import org.atv.views.PlayerInteraction;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,7 +12,7 @@ public class ConsoleInteraction implements PlayerInteraction {
    private Scanner scanner = new Scanner(System.in);
    @Override
    public Card selectCard(List<Card> cardsAvailable) {
-      System.out.println("Selecciona una carta para descartar:");
+      System.out.println("Seleccione una carta:");
       for (int i = 0; i < cardsAvailable.size(); i++) {
          System.out.println(i + ": " + cardsAvailable.get(i).getName());
       }
@@ -27,7 +26,12 @@ public class ConsoleInteraction implements PlayerInteraction {
       System.out.println(message);
       int option = 0;
       do {
-         option = scanner.nextInt();
+         try {
+            option = scanner.nextInt();
+         } catch (Exception e) {
+            System.out.println("Entrada inválida. Por favor, introduce un número.");
+            scanner.next(); // Limpiar el buffer
+         }
 
       } while(option < 1 || option > numberOfOptions);
 
@@ -36,6 +40,10 @@ public class ConsoleInteraction implements PlayerInteraction {
 
    @Override
    public void killZombies(List<Card> zombies, int quantity) {
+      if (zombies.isEmpty()) {
+         System.out.println("No hay zombies restantes.");
+         return;
+      }
       System.out.println("Selecciona ");
 
       for (int i = 0; i < zombies.size(); i++) {
@@ -56,21 +64,29 @@ public class ConsoleInteraction implements PlayerInteraction {
 
                if (indiceCarta >= 0 && indiceCarta < zombies.size()) {
                   ZombieCard carta = (ZombieCard) zombies.get(indiceCarta);
-                  carta.setZombiesKilled(carta.getZombiesKilled() + valor);
+                  carta.setZombiesLeft(carta.getZombiesLeft() - valor);
                } else {
                   System.out.println("Índice fuera de rango: " + (indiceCarta + 1));
+                  killZombies(zombies, quantity);
                }
             } catch (NumberFormatException e) {
                System.out.println("Error al parsear entrada: " + par);
+               killZombies(zombies, quantity);
             }
          } else {
             System.out.println("Formato inválido para el par: " + par);
+            killZombies(zombies, quantity);
          }
       }
    }
 
    @Override
    public void discardZombies(List<Card> zombies, int quantity) {
+      if (zombies.isEmpty()) {
+         System.out.println("No hay zombies restantes.");
+         return;
+      }
+
       System.out.println("Selecciona ");
 
       for (int i = 0; i < zombies.size(); i++) {
@@ -103,6 +119,13 @@ public class ConsoleInteraction implements PlayerInteraction {
          }
       }
    }
+
+   @Override
+   public void showMessage(String message) {
+      System.out.println(message);
+   }
+
+
 
 
 }

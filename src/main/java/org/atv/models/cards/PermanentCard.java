@@ -1,37 +1,57 @@
 package org.atv.models.cards;
 
+import org.atv.models.Game;
 import org.atv.models.actions.Action;
 
 public class PermanentCard extends Card{
 
-   private int usageCost;
+   private int prepareCost;
    private Action prepareAction;
    private Action exitAction;
    private boolean oncePerTurn = false;
    private boolean used = false;
+   private boolean prepared = false;
 
    public PermanentCard(String name, int explorationCost, int usageCost, String subType, Action action) {
       super(name, subType, explorationCost, action);
-      this.usageCost = usageCost;
+      this.prepareCost = usageCost;
    }
 
    public PermanentCard(String name, int explorationCost, int usageCost, String subType, boolean oncePerTurn, Action action) {
       super(name, subType, explorationCost, action);
-      this.usageCost = usageCost;
+      this.prepareCost = usageCost;
       this.oncePerTurn = oncePerTurn;
    }
 
    public PermanentCard(String name, int explorationCost, int usageCost, String subType) {
       super(name, subType, explorationCost);
-      this.usageCost = usageCost;
+      this.prepareCost = usageCost;
+   }
+   public void prepare(Game game) {
+      if (this.prepareAction != null) {
+         this.prepareAction.execute(game, this);
+      } else {
+         if (game.discard(this.prepareCost)) {
+            this.prepared = true;
+         }
+      }
+
    }
 
-   public int getUsageCost() {
-      return usageCost;
+   public void setPrepared(boolean prepared) {
+      this.prepared = prepared;
    }
 
-   public void setUsageCost(int usageCost) {
-      this.usageCost = usageCost;
+   public boolean isPrepared() {
+      return prepared;
+   }
+
+   public int getPrepareCost() {
+      return prepareCost;
+   }
+
+   public void setPrepareCost(int prepareCost) {
+      this.prepareCost = prepareCost;
    }
 
    public Action getPrepareAction() {
@@ -64,5 +84,20 @@ public class PermanentCard extends Card{
 
    public void setUsed(boolean used) {
       this.used = used;
+   }
+
+   @Override
+   public String toString() {
+      return "[" + getName() + ", PC: " + getPrepareCost() + ", EC: " + getExplorationCost() + "]";
+   }
+
+   @Override
+   public String toStringHand() {
+      return "[" + getName() + ", PC: " + getPrepareCost() + "]";
+   }
+
+   @Override
+   public String toStringInPlay() {
+      return "[" + getName() + ", PC: " + getPrepareCost() + " prep: " + isPrepared() + "]";
    }
 }
