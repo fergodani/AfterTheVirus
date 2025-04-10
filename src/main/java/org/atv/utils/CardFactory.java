@@ -613,9 +613,11 @@ public class CardFactory {
                }
             }
             ((PermanentCard) self).setPrepared(true);
-            game.setRifleInPlay(true);
          }
       }));
+      permanentCard.setEnterAction((game, card) -> {
+         game.setRifleInPlay(true);
+      });
       permanentCard.setExitAction((game, card) -> {
          game.setRifleInPlay(false);
       });

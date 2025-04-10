@@ -15,7 +15,6 @@ public class GameController {
    }
 
    public void start() {
-      // TODO: tener en cuenta si se tiene el rifle en la mano se le puede añadir munición
       int option = this.userInterface.getPlayerInteraction().selectOption("Select a character: \n1. Ruth\n2. Adam\n3. Robert\n4. Jennie", 4);
       Character character = Character.values()[option - 1];
       game.init(character);

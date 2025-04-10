@@ -6,6 +6,7 @@ import org.atv.models.actions.Action;
 public class PermanentCard extends Card{
 
    private int prepareCost;
+   private Action enterAction;
    private Action prepareAction;
    private Action exitAction;
    private boolean oncePerTurn = false;
@@ -100,4 +101,12 @@ public class PermanentCard extends Card{
    public String toStringInPlay() {
       return "[" + getName() + ", PC: " + getPrepareCost() + " prep: " + isPrepared() + "]";
    }
+
+    public Action getEnterAction() {
+        return enterAction;
+    }
+
+    public void setEnterAction(Action enterAction) {
+        this.enterAction = enterAction;
+    }
 }

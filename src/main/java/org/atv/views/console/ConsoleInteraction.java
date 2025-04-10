@@ -4,6 +4,8 @@ import org.atv.models.cards.Card;
 import org.atv.models.cards.ZombieCard;
 import org.atv.views.PlayerInteraction;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -19,6 +21,29 @@ public class ConsoleInteraction implements PlayerInteraction {
 
       int eleccion = scanner.nextInt();
       return cardsAvailable.get(eleccion);
+   }
+
+   @Override
+   public List<Card> selectCards(List<Card> cardsAvailable) {
+      System.out.println("Seleccione las cartas (separadas por un espacio):");
+      for (int i = 0; i < cardsAvailable.size(); i++) {
+         System.out.println((i+1) + ": " + cardsAvailable.get(i).getName());
+      }
+      scanner.nextLine();
+      String input = scanner.nextLine();
+      String[] indexes = input.split(" ");
+      List<Integer> indexesParsed = new ArrayList<>();
+      List<Card> cards = new ArrayList<>();
+      int index;
+      for (int i = 0; i < indexes.length; i++) {
+         index = Integer.parseInt(indexes[i]) - 1;
+         if (index < 0 || index >= cardsAvailable.size() || indexesParsed.contains(index)) {
+            continue;
+         }
+         indexesParsed.add(index);
+         cards.add(cardsAvailable.get(Integer.parseInt(indexes[i]) - 1));
+      }
+      return cards;
    }
 
    @Override
@@ -51,7 +76,7 @@ public class ConsoleInteraction implements PlayerInteraction {
       }
 
       System.out.println("Introduce los pares (índice número) separados por comas. Ejemplo: 1 2, 3 3, 2 1");
-      Scanner scanner = new Scanner(System.in);
+
       String input = scanner.nextLine(); // Ej: "1 2, 3 3, 2 1"
 
       String[] pares = input.split(",");
@@ -94,7 +119,7 @@ public class ConsoleInteraction implements PlayerInteraction {
       }
 
       System.out.println("Introduce los pares (índice número) separados por comas. Ejemplo: 1 2, 3 3, 2 1");
-      Scanner scanner = new Scanner(System.in);
+
       String input = scanner.nextLine(); // Ej: "1 2, 3 3, 2 1"
 
       String[] pares = input.split(",");

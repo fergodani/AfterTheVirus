@@ -101,6 +101,9 @@ public class ConsoleInterface implements UserInterface {
          case 6:
             game.pass();
             break;
+         case 7:
+            game.reloadRifle();
+            break;
          default:
             System.out.println("Acción no válida.");
       }

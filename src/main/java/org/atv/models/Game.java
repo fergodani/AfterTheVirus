@@ -1,13 +1,11 @@
 package org.atv.models;
 
+import jdk.nashorn.internal.runtime.options.Option;
 import org.atv.models.cards.*;
 import org.atv.utils.CardFactory;
 import org.atv.views.PlayerInteraction;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Game {
@@ -60,6 +58,13 @@ public class Game {
             this.playerHand.add(card);
          }
       }
+
+      // Remove
+      for (Card card : this.explorationDeck) {
+         if (card.getName().equals("Rifle")) {
+            this.playerHand.add(card);
+         }
+      }
    }
 
    public void playCard() {
@@ -78,6 +83,9 @@ public class Game {
       } else {
          this.playerHand.remove(card);
          this.playerArea.add(card);
+         if (((PermanentCard)card).getEnterAction() != null) {
+            ((PermanentCard)card).getEnterAction().execute(this, card);
+         }
          if (((PermanentCard) card).getPrepareCost() == 0 && !(card instanceof ShootingCard)) {
             ((PermanentCard) card).setPrepared(true);
          }
@@ -262,6 +270,18 @@ public class Game {
       return this.playerDiscard.stream()
               .filter((card) -> card instanceof ZombieCard)
               .collect(Collectors.toList());
+   }
+
+   public void reloadRifle() {
+      List<Card> ammo = this.playerInteraction.selectCards(this.playerHand);
+
+      Optional<Card> rifle = this.playerArea.stream()
+              .filter((card) -> card.getName().equals("Rifle"))
+              .findFirst();
+      if (rifle.isPresent()) {
+         ((ShootingCard)rifle.get()).addAmmo(ammo);
+         this.playerHand.removeAll(ammo);
+      }
    }
 
    public void incrementSurvivorsRescued(int value) {
